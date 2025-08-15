@@ -1,0 +1,199 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# 1) Basic ALU
+cat > alu_basic.dat <<'EOF'
+34080006
+34090007
+01095020
+AC0A00FC
+08000004
+EOF
+
+# 2) Forwarding / Load->Use (mixed)
+cat > hazard_forward.dat <<'EOF'
+34080001
+34090002
+01095020
+01495820
+AC0B0000
+8C100000
+020B5020
+214A0003
+AC0A00FC
+08000009
+EOF
+
+# 3) Load-Use (stall=1)
+cat > load_use_stall.dat <<'EOF'
+34080005
+AC080000
+8C090000
+340A0008
+01495020
+AC0A00FC
+08000006
+EOF
+
+# 4) MULT -> MFLO
+cat > muldiv_hi_lo.dat <<'EOF'
+34080003
+34090004
+01090018
+00005012
+340B0001
+014B5020
+AC0A00FC
+08000007
+EOF
+
+# 5) DIV -> MFHI
+cat > div_hi_add.dat <<'EOF'
+34080008
+34090005
+0109001A
+00005010
+340B000A
+014B5020
+AC0A00FC
+08000007
+EOF
+
+# 6) JR indirect jump
+cat > jr_indirect.dat <<'EOF'
+34090018
+340A000D
+01200008
+00000000
+08000004
+00000000
+AC0A00FC
+08000007
+EOF
+
+# 7) Early resolution for BEQ taken
+cat > branch_mix.dat <<'EOF'
+34080005
+34090005
+11090002
+340A0001
+340A0002
+340A000D
+AC0A00FC
+08000007
+EOF
+
+# 8) Prevent writes to $zero
+cat > zero_write_guard.dat <<'EOF'
+34080001
+01080020
+00085020
+340B000C
+014B5020
+AC0A00FC
+08000006
+EOF
+
+# 9) JAL -> subroutine -> JR $ra
+cat > jal_link_return.dat <<'EOF'
+0C000006
+00000000
+08000002
+00000000
+00000000
+00000000
+340A000D
+AC0A00FC
+03E00008
+00000000
+EOF
+
+# 10) LUI/ORI/ANDI (zero-extend)
+cat > lui_andi_mix.dat <<'EOF'
+3C0A0001
+354A000D
+314AFFFF
+AC0A00FC
+08000004
+EOF
+
+# 11) Branch predictor stress (Taken/Not-Taken alternation)
+cat > branch_mispredict_stress.dat <<'EOF'
+34080000
+39080001
+11000001
+00000000
+39080001
+11000001
+00000000
+39080001
+11000001
+00000000
+340A000D
+AC0A00FC
+0800000C
+EOF
+
+# 12) SW -> LW -> use (round-trip through memory)
+cat > mem_sw_lw_use.dat <<'EOF'
+340A000D
+AC0A0000
+8C090000
+01205020
+AC0A00FC
+08000005
+EOF
+
+# 13) SLT (signed comparison)
+cat > slt_signed.dat <<'EOF'
+2008FFFF
+20090001
+0109502A
+340B000C
+014B5020
+AC0A00FC
+08000006
+EOF
+
+# 14) SRA (arithmetic right shift with sign extension)
+cat > sra_sign_arith.dat <<'EOF'
+3C0AFFFF
+000A5103
+340B100D
+014B5020
+AC0A00FC
+08000005
+EOF
+
+# 15) Disable fall-through SW via branch flush
+cat > flush_store_guard_taken.dat <<'EOF'
+340A0063
+34080005
+34090005
+11090002
+AC0A00F8
+00000000
+340A000D
+AC0A00FC
+08000008
+EOF
+
+# 16) fib32 (store 13 to 0xFC and loop)
+cat > fib32.dat <<'EOF'
+340A000D
+AC0A00FC
+08000002
+EOF
+
+# 17) sum32 (sum 0..20 -> 210)
+cat > sum32.dat <<'EOF'
+20030000
+20040014
+10800003
+00641820
+2084ffff
+08000002
+ac0300fc
+EOF
+
+echo "Done. Generated 17 HEX files."
